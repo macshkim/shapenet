@@ -313,22 +313,34 @@ def prepare_helen_dset():
 #                   **split_options)
 
 
-def prepare_dlib_dset(data_dir):
+def prepare_dlib_dset():
     """
     Prepare datasets similar to one available in dlib.
     Download according to this instruction 
     https://medium.com/datadriveninvestor/training-alternative-dlib-shape-predictor-models-using-python-d1d8f8bd9f5c
     """
-    print('Prepare dlib dataset')    
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset",
+                        help="Path to dataset dir",
+                        type=str)
+    args = parser.parse_args()
+    data_dir = args.dataset
+
+    print('Prepare dlib dataset ', data_dir)    
     dsets = ['helen', 'ibug', 'lfpw']
     for ds in dsets:
         p = os.path.join(data_dir, ds)
         train_dir = os.path.join(p, 'trainset')
         train_dir = train_dir if os.path.exists(train_dir) else p
-        print ('make pca for ', ds)
-        _make_pca(train_dir,
-              os.path.join(data_dir, ds + ".train_pca.npz"), 
-              rotation_idxs=(37, 46))    
+        output_dir = os.path.join(data_dir, ds + ".train_pca.npz")
+        if not os.path.exists(output_dir):
+            print ('make pca for ', ds)
+            _make_pca(train_dir,
+                  output_dir, 
+                  rotation_idxs=(37, 46))
+        else:
+            print (ds, ' is already preprocessed')    
 
 def prepare_all_data():
     """
@@ -419,5 +431,5 @@ def prepare_all_data():
 
 if __name__ == '__main__':
     # prepare_all_data()
-    data_dir = '/home/tamvm/Downloads/ibug_300W_large_face_landmark_dataset'
-    prepare_dlib_dset(data_dir)
+    # data_dir = '/home/tamvm/Downloads/ibug_300W_large_face_landmark_dataset'
+    prepare_dlib_dset()
