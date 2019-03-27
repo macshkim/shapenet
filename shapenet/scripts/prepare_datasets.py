@@ -1,4 +1,4 @@
-# import kaggle
+import kaggle
 import os
 import zipfile
 import glob
@@ -51,115 +51,115 @@ def _make_pca(data_dir, out_file, normalize_rot=False, rotation_idxs=()):
         np.savez(out_file + ".npz", shapes=pca)
 
 
-# def _process_single_cat_file(file, target_dir):
-#     """
-#     Processes a single file of the cat dataset
+def _process_single_cat_file(file, target_dir):
+    """
+    Processes a single file of the cat dataset
     
-#     Parameters
-#     ----------
-#     file : str
-#         the file to process
-#     target_dir : str
-#         the target directory
+    Parameters
+    ----------
+    file : str
+        the file to process
+    target_dir : str
+        the target directory
     
-#     """
+    """
 
-#     file = os.path.abspath(file)
-#     target_dir = os.path.abspath(target_dir)
+    file = os.path.abspath(file)
+    target_dir = os.path.abspath(target_dir)
 
-#     pd_frame = pd.read_csv(str(file) + ".cat", sep=' ', header=None)
-#     landmarks = (pd_frame.as_matrix()[0][1:-1]).reshape((-1, 2))
-#     # switch xy
-#     landmarks[:, [0, 1]] = landmarks[:, [1, 0]]
+    pd_frame = pd.read_csv(str(file) + ".cat", sep=' ', header=None)
+    landmarks = (pd_frame.as_matrix()[0][1:-1]).reshape((-1, 2))
+    # switch xy
+    landmarks[:, [0, 1]] = landmarks[:, [1, 0]]
 
-#     target_file = os.path.join(target_dir, os.path.split(
-#         os.path.split(file)[0])[-1] + "_" + os.path.split(file)[-1])
+    target_file = os.path.join(target_dir, os.path.split(
+        os.path.split(file)[0])[-1] + "_" + os.path.split(file)[-1])
 
-#     # export landmarks
-#     pts_exporter(landmarks, str(target_file.rsplit(".", 1)[0]) + ".pts")
+    # export landmarks
+    pts_exporter(landmarks, str(target_file.rsplit(".", 1)[0]) + ".pts")
 
-#     # move image file
-#     shutil.move(file, target_file)
-#     os.remove(file + ".cat")
+    # move image file
+    shutil.move(file, target_file)
+    os.remove(file + ".cat")
 
 
-# def _prepare_cats(out_dir, remove_zip=False, normalize_pca_rot=False,
-#                   **split_options):
-#     """
-#     Prepares the cat dataset (with multiprocessing)
+def _prepare_cats(out_dir, remove_zip=False, normalize_pca_rot=False,
+                  **split_options):
+    """
+    Prepares the cat dataset (with multiprocessing)
     
-#     Parameters
-#     ----------
-#     out_dir : str
-#         the output directory
-#     remove_zip : bool, optional
-#         whether or not to remove the ZIP file after finishing the preparation
-#     normalize_pca_rot : bool, optional
-#         whether or not to normalize the data's rotation during PCA
+    Parameters
+    ----------
+    out_dir : str
+        the output directory
+    remove_zip : bool, optional
+        whether or not to remove the ZIP file after finishing the preparation
+    normalize_pca_rot : bool, optional
+        whether or not to normalize the data's rotation during PCA
 
-#     See Also
-#     --------
-#     `Cat Dataset <https://www.kaggle.com/crawford/cat-dataset>`_
+    See Also
+    --------
+    `Cat Dataset <https://www.kaggle.com/crawford/cat-dataset>`_
     
-#     """
+    """
 
 
-#     out_dir = os.path.abspath(out_dir)
+    out_dir = os.path.abspath(out_dir)
 
-#     data_path = os.path.join(out_dir, "Cats")
-#     os.makedirs(data_path, exist_ok=True)
+    data_path = os.path.join(out_dir, "Cats")
+    os.makedirs(data_path, exist_ok=True)
 
-#     if not os.path.isfile(os.path.join(data_path, "cats.zip")):
-#         print("\tDownloading Data")
-#         kaggle.api.dataset_download_cli("crawford/cat-dataset",
-#                                         path=data_path, unzip=True)
+    if not os.path.isfile(os.path.join(data_path, "cats.zip")):
+        print("\tDownloading Data")
+        kaggle.api.dataset_download_cli("crawford/cat-dataset",
+                                        path=data_path, unzip=True)
 
-#     if not (os.path.isdir(os.path.join(data_path, "train")) and
-#             os.path.isdir(os.path.join(data_path, "test"))):
+    if not (os.path.isdir(os.path.join(data_path, "train")) and
+            os.path.isdir(os.path.join(data_path, "test"))):
 
-#         if not os.path.isdir(os.path.join(data_path, "tmp_data")):
-#             print("\tExtracting Data")
-#             with zipfile.ZipFile(os.path.join(data_path, "cats.zip")) as zip_ref:
-#                 zip_ref.extractall(os.path.join(data_path, "tmp_data"))
+        if not os.path.isdir(os.path.join(data_path, "tmp_data")):
+            print("\tExtracting Data")
+            with zipfile.ZipFile(os.path.join(data_path, "cats.zip")) as zip_ref:
+                zip_ref.extractall(os.path.join(data_path, "tmp_data"))
 
-#         # get all jpeg files
-#         sub_dirs = [os.path.join(data_path, "tmp_data", x)
-#                     for x in os.listdir(os.path.join(data_path, "tmp_data"))
-#                     if os.path.isdir(os.path.join(data_path, "tmp_data", x))]
+        # get all jpeg files
+        sub_dirs = [os.path.join(data_path, "tmp_data", x)
+                    for x in os.listdir(os.path.join(data_path, "tmp_data"))
+                    if os.path.isdir(os.path.join(data_path, "tmp_data", x))]
 
-#         img_files = []
-#         for _dir in sub_dirs:
-#             img_files += [os.path.join(_dir, x) for x in os.listdir(_dir)
-#                           if x.endswith(".jpg")]
+        img_files = []
+        for _dir in sub_dirs:
+            img_files += [os.path.join(_dir, x) for x in os.listdir(_dir)
+                          if x.endswith(".jpg")]
 
-#         train_files, test_files = train_test_split(img_files, **split_options)
+        train_files, test_files = train_test_split(img_files, **split_options)
 
-#         if not (os.path.isdir(os.path.join(data_path, "train")) and
-#                 os.path.isdir(os.path.join(data_path, "test"))):
+        if not (os.path.isdir(os.path.join(data_path, "train")) and
+                os.path.isdir(os.path.join(data_path, "test"))):
 
-#             print("Preprocessing Data")
+            print("Preprocessing Data")
 
-#             os.makedirs(os.path.join(data_path, "train"), exist_ok=True)
-#             with Pool() as p:
-#                 p.map(partial(_process_single_cat_file,
-#                               target_dir=os.path.join(data_path, "train")),
-#                       train_files)
+            os.makedirs(os.path.join(data_path, "train"), exist_ok=True)
+            with Pool() as p:
+                p.map(partial(_process_single_cat_file,
+                              target_dir=os.path.join(data_path, "train")),
+                      train_files)
 
-#             os.makedirs(os.path.join(data_path, "test"), exist_ok=True)
-#             with Pool() as p:
-#                 p.map(partial(_process_single_cat_file,
-#                               target_dir=os.path.join(data_path, "test")),
-#                       test_files)
+            os.makedirs(os.path.join(data_path, "test"), exist_ok=True)
+            with Pool() as p:
+                p.map(partial(_process_single_cat_file,
+                              target_dir=os.path.join(data_path, "test")),
+                      test_files)
 
-#         shutil.rmtree(os.path.join(data_path, "tmp_data"))
+        shutil.rmtree(os.path.join(data_path, "tmp_data"))
 
-#     print("Make PCA")
-#     _make_pca(os.path.join(data_path, "train"),
-#               os.path.join(data_path, "train_pca.npz"),
-#               normalize_rot=normalize_pca_rot, rotation_idxs=(0, 1))
+    print("Make PCA")
+    _make_pca(os.path.join(data_path, "train"),
+              os.path.join(data_path, "train_pca.npz"),
+              normalize_rot=normalize_pca_rot, rotation_idxs=(0, 1))
 
-#     if remove_zip:
-#         os.remove(os.path.join(data_path, "cats.zip"))
+    if remove_zip:
+        os.remove(os.path.join(data_path, "cats.zip"))
 
 
 def _prepare_ibug_dset(zip_file, dset_name, out_dir, remove_zip=False,
@@ -270,77 +270,48 @@ def prepare_helen_dset():
                        args.normalize_pca_rot)
 
 
-# def prepare_cat_dset():
-#     """
-#     Prepares the Cat Dataset from commandline arguments
-    
-#     See Also
-#     --------
-#     :meth:`_prepare_cats`
-#     `Cat Dataset <https://www.kaggle.com/crawford/cat-dataset>`_
-
-#     """
-#     import argparse
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument("-d", "--ddir", type=str,
-#                         help="Target data directory")
-#     parser.add_argument("--normalize_pca_rot", action="store_true",
-#                         help="Whether or not to normalize the pca's rotation")
-#     parser.add_argument("--test_size", type=float, default=0.25,
-#                         help="Testsize for \
-#                             sklearn.model_selection.train_test_split")
-#     parser.add_argument("--train_size", type=float, default=None,
-#                         help="Testsize for \
-#                             sklearn.model_selection.train_test_split")
-#     parser.add_argument("--no_shuffle", action="store_true",
-#                         help="If specified, data will not be shuffled during \
-#                             train_test_split ")
-#     parser.add_argument("--random_state", type=int, default=None,
-#                         help="random state for \
-#                             sklearn.model_selection.train_test_split ")
-#     parser.add_argument("--remove_zip", action="store_true",
-#                         help="Zipfiles will be removed after processing data",
-#                         default=False)
-#     args = parser.parse_args()
-
-#     split_options = {
-#         "test_size": args.test_size,
-#         "train_size": args.train_size,
-#         "shuffle": False if args.no_shuffle else True,
-#         "random_state": args.random_state
-#     }
-#     _prepare_cats(args.ddir, args.remove_zip, args.normalize_pca_rot,
-#                   **split_options)
-
-
-def prepare_dlib_dset():
+def prepare_cat_dset():
     """
-    Prepare datasets similar to one available in dlib.
-    Download according to this instruction 
-    https://medium.com/datadriveninvestor/training-alternative-dlib-shape-predictor-models-using-python-d1d8f8bd9f5c
+    Prepares the Cat Dataset from commandline arguments
+    
+    See Also
+    --------
+    :meth:`_prepare_cats`
+    `Cat Dataset <https://www.kaggle.com/crawford/cat-dataset>`_
+
     """
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset",
-                        help="Path to dataset dir",
-                        type=str)
+    parser.add_argument("-d", "--ddir", type=str,
+                        help="Target data directory")
+    parser.add_argument("--normalize_pca_rot", action="store_true",
+                        help="Whether or not to normalize the pca's rotation")
+    parser.add_argument("--test_size", type=float, default=0.25,
+                        help="Testsize for \
+                            sklearn.model_selection.train_test_split")
+    parser.add_argument("--train_size", type=float, default=None,
+                        help="Testsize for \
+                            sklearn.model_selection.train_test_split")
+    parser.add_argument("--no_shuffle", action="store_true",
+                        help="If specified, data will not be shuffled during \
+                            train_test_split ")
+    parser.add_argument("--random_state", type=int, default=None,
+                        help="random state for \
+                            sklearn.model_selection.train_test_split ")
+    parser.add_argument("--remove_zip", action="store_true",
+                        help="Zipfiles will be removed after processing data",
+                        default=False)
     args = parser.parse_args()
-    data_dir = args.dataset
 
-    print('Prepare dlib dataset ', data_dir)    
-    dsets = ['helen', 'ibug', 'lfpw']
-    for ds in dsets:
-        p = os.path.join(data_dir, ds)
-        train_dir = os.path.join(p, 'trainset')
-        train_dir = train_dir if os.path.exists(train_dir) else p
-        output_dir = os.path.join(data_dir, ds + ".train_pca.npz")
-        if not os.path.exists(output_dir):
-            print ('make pca for ', ds)
-            _make_pca(train_dir,
-                  output_dir, 
-                  rotation_idxs=(37, 46))
-        else:
-            print (ds, ' is already preprocessed')    
+    split_options = {
+        "test_size": args.test_size,
+        "train_size": args.train_size,
+        "shuffle": False if args.no_shuffle else True,
+        "random_state": args.random_state
+    }
+    _prepare_cats(args.ddir, args.remove_zip, args.normalize_pca_rot,
+                  **split_options)
+
 
 def prepare_all_data():
     """
@@ -362,10 +333,10 @@ def prepare_all_data():
                         help="If Flag is set, the helen database will be \
                             preprocessed; Must specify '--hzip' argument ",
                         default=False)
-    # parser.add_argument("--cats", action="store_true",
-    #                     help="If Flag is set, the cat database will be \
-    #                     downloaded and preprocessed ",
-    #                     default=False)
+    parser.add_argument("--cats", action="store_true",
+                        help="If Flag is set, the cat database will be \
+                        downloaded and preprocessed ",
+                        default=False)
     parser.add_argument("--lzip", type=str, default=None,
                         help="Zipfile containing the lfpw database")
     parser.add_argument("--hzip", type=str, default=None,
@@ -408,11 +379,11 @@ def prepare_all_data():
     else:
         args.remove_zip = False
 
-    # if args.cats:
-    #     print("Prepare Cats Dataset")
-    #     _prepare_cats(data_dir, remove_zip=remove_zip,
-    #                   normalize_pca_rot=args.normalize_pca_rot,
-    #                   **split_options)
+    if args.cats:
+        print("Prepare Cats Dataset")
+        _prepare_cats(data_dir, remove_zip=remove_zip,
+                      normalize_pca_rot=args.normalize_pca_rot,
+                      **split_options)
 
     if args.lfpw and args.lzip is not None:
         print("Prepare LFPW Dataset")
@@ -430,6 +401,4 @@ def prepare_all_data():
 
 
 if __name__ == '__main__':
-    # prepare_all_data()
-    # data_dir = '/home/tamvm/Downloads/ibug_300W_large_face_landmark_dataset'
-    prepare_dlib_dset()
+    prepare_all_data()
