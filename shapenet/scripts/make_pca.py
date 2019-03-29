@@ -163,9 +163,9 @@ def prepare_dlib_dset(lmk_xml):
         points = normalize_rotation(points, img_sizes)
         # view_landmarks(points[20])
         pca = make_pca(points, img_sizes)        
-        print('pca size = ', pca[0].shape)
-        print(pca[0])
-        # np.savez(pca_file, shapes=pca)
+        # print('pca size = ', pca[0].shape)
+        # print(pca[0])
+        np.savez(pca_file, shapes=pca)
     else:
         print ('pca file already exists at ', pca_file)
 
