@@ -12,7 +12,6 @@ import matplotlib.image as mpimg
 ####################################################
 
 def get_angle(v0, v1, v2, degree=False):
-
     a1 = v0 - v1
     a2 = v0 - v2
     cosine_angle = np.dot(a1, a2) / (np.linalg.norm(a1) *
@@ -96,7 +95,7 @@ def make_pca(landmarks, scale = True, center = True):
         components.shape[0] + 1,
         *landmarks_transposed.shape[1:]).transpose(0, 2, 1)
 
-def view_landmarks(lmks, img = None, size = None):
+def view_landmarks(lmks, img = None):
     """show landmark"""
     # print(img)
     marker_size = 15    
@@ -106,7 +105,6 @@ def view_landmarks(lmks, img = None, size = None):
         # convert to image origin
         plt.gca().invert_yaxis()
     plt.scatter(lmks[:, 0], lmks[:, 1], c="C0", s=marker_size)
-
     plt.show()
 
 def normalize_rotation(lmks, img_size, rotation_idxs=(37, 46)):    
@@ -163,7 +161,7 @@ def prepare_dlib_dset(lmk_xml):
         points = normalize_rotation(points, img_sizes)
         # view_landmarks(points[20])
         pca = make_pca(points, img_sizes)        
-        # print('pca size = ', pca[0].shape)
+        print('pca size = ', pca.shape)
         # print(pca[0])
         np.savez(pca_file, shapes=pca)
     else:
