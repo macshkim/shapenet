@@ -10,7 +10,6 @@ def train_shapenet():
     :class:`delira.training.PyTorchNetworkTrainer`
     
     """
-
     import logging
     import numpy as np
     import torch
