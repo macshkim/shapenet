@@ -102,7 +102,7 @@ def eval(model, val_dataset, criteria, metrics, input_device, output_device):
             for key, metric_fn in metrics.items():
                 metric_vals[key] += metric_fn(preds, labels).detach()
 
-        results[last_idx:(last_idx + len(preds)), :, :] = preds
+        results[last_idx:(last_idx + len(preds)), :, :] = preds.cpu()
     metric_vals = {k:(v/total_batch) for k, v in metric_vals.items()}
     loss_vals = {k:(v/total_batch) for k, v in loss_vals.items()}
     return metric_vals, loss_vals, results
@@ -147,7 +147,7 @@ def train(pca_path, train_data, val_data, model_dir, eval_only = False, num_epoc
     if eval_only:
         print('test on test set')
         metric_vals, loss_vals, preds = eval(net, val_dataset, criteria, metrics, input_device, output_device)
-        print('val loss', loss_vals, ' metrics ', metric_vals)
+        print('val loss', loss_vals, ' metrics ', metric_vals)        
     else:
         # train - just set the mode to 'train'    
         net.train()        
