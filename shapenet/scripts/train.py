@@ -5,6 +5,7 @@ import torch
 from tqdm import trange
 from tqdm.auto import tqdm
 import math
+import os
 
 BATCH_SIZE = 1
 N_COMPONENTS = 25
@@ -135,6 +136,7 @@ def run_train():
                         type=str)
     args = parser.parse_args()
     data_dir = args.datadir
+    assert data_dir is not None
     pca_path = os.path.join(data_dir, 'train_pca.npz')
     train_data = os.path.join(data_dir, 'labels_ibug_300W_train.npz')
     val_data = os.path.join(data_dir, 'labels_ibug_300W_test.npz')
