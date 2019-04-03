@@ -108,32 +108,43 @@ def eval(model, val_dataset, criteria, metrics, input_device, output_device):
     return metric_vals, loss_vals, results
 
 
+def get_last_train_state(model_dir):
+    checkpoints = [n for n in os.listdir(model_dir) if n.startswith('shapenet_epoch_')]
+    if len(checkpoints) > 0:
+        checkpoints.sort(reverse=True)
+        last_epoch = checkpoints[0]
+        return torch.load(last_epoch)
+    return None
+
+
+
 def train(pca_path, train_data, val_data, model_dir, num_epochs = 200):    
 
     n_components = N_COMPONENTS    
     # load PCA
     pca = load_pca(pca_path, n_components)  
-
+                
     # create network 
     net, input_device, output_device = create_nn(pca)
-
+    
     # load data set
-    train_dataset = load_dataset(train_data)
-    # print('lmk shapes = ', train_dataset.labels.shape)
-    # return 
+    train_dataset = load_dataset(train_data)    
     val_dataset = load_dataset(val_data)
-
 
     # define optimizers
     optimizer = create_optimizer(net)
-    # loss function
-    criteria = {"L1": torch.nn.L1Loss()}
-
-    # load latest epoch if available        
     start_epoch = 0
-    # train - just set the mode to 'train'
-    net.train()    
-
+    # load latest epoch if available        
+    saved_state = get_last_train_state(model_dir)
+    if saved_state is not None:
+        print ('load saved state')
+        net.load_state_dict(saved_state['model'])    
+        optimizer.load_state_dict(saved_state['optimizer'])
+        start_epoch = saved_state['epoch']
+    # loss function
+    criteria = {"L1": torch.nn.L1Loss()}    
+    # train - just set the mode to 'train'    
+    net.train()        
     save_freq = 1
     for epoch in range(start_epoch, num_epochs+1):
         # train a single epoch
@@ -141,7 +152,9 @@ def train(pca_path, train_data, val_data, model_dir, num_epochs = 200):
 
         # save model after epoch
         if (epoch + 1) % save_freq == 0 or epoch == num_epochs:
-            torch.save(net.stat_dict(), os.path.join(model_dir, 'shapenet_epoch_%d.pth'% epoch))
+            torch.save(dict(epoch=epoch, 
+                model=net.state_dict(), 
+                optimizer=optimizer.state_dict()), os.path.join(model_dir, 'shapenet_epoch_%d.pth'% epoch))
 
         #validate 
         print('eval at end of epoch')
@@ -164,6 +177,9 @@ def run_train():
     train_data = os.path.join(data_dir, 'labels_ibug_300W_train.npz')
     val_data = os.path.join(data_dir, 'labels_ibug_300W_test.npz')
     model_dir = os.path.join(data_dir, 'model')
+    if not os.path.exists(model_dir):
+        os.mkdir(model_dir)
+
     train(pca_path, train_data, val_data, model_dir)  
 
 if __name__ == '__main__':
