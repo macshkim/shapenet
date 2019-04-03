@@ -113,7 +113,7 @@ def get_last_train_state(model_dir):
     if len(checkpoints) > 0:
         checkpoints.sort(reverse=True)
         last_epoch = checkpoints[0]
-        return torch.load(last_epoch)
+        return torch.load(os.path.join(model_dir, last_epoch))
     return None
 
 
