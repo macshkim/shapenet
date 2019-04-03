@@ -81,7 +81,7 @@ def train_single_epoch(model, optimizer, criteria, dataset, input_device, output
 def eval(model, val_dataset, criteria, metrics, input_device, output_device):   
     eval_batch_size = 20
     total_batch = math.ceil(val_dataset.set_size()/ eval_batch_size)
-    results = np.ndarray(val_dataset.set_size(), *val_dataset.get_label(0).shape)
+    results = np.ndarray((val_dataset.set_size(), *val_dataset.get_label(0).shape))
     last_idx = 0
 
     loss_vals = {k:0 for k in criteria}
