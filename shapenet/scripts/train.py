@@ -108,39 +108,41 @@ def eval(model, val_dataset, criteria, metrics, input_device, output_device):
     return metric_vals, loss_vals, results
 
 
-def get_last_train_state(model_dir):
-    checkpoints = [n for n in os.listdir(model_dir) if n.startswith('shapenet_epoch_')]
-    if len(checkpoints) > 0:
-        checkpoints.sort(reverse=True)
-        last_epoch = checkpoints[0]
-        return torch.load(os.path.join(model_dir, last_epoch))
-    return None
-
-
-def train(pca_path, train_data, val_data, model_dir, eval_only = False, num_epochs = TRAIN_EPOCHS):    
-
+def load_model(data_dir):
+    model_dir = os.path.join(data_dir, 'model')
+    pca_path = os.path.join(data_dir, 'train_pca.npz')
     n_components = N_COMPONENTS    
     # load PCA
-    pca = load_pca(pca_path, n_components)  
-                
+    pca = load_pca(pca_path, n_components) 
     # create network 
     net, input_device, output_device = create_nn(pca)
-    
+    optimizer = create_optimizer(net)
+
+    checkpoints = [n for n in os.listdir(model_dir) if n.startswith('shapenet_epoch_')]
+    if len(checkpoints) > 0:
+        print ('load saved state')
+        checkpoints.sort(reverse=True)
+        last_epoch = checkpoints[0]
+        saved_state = torch.load(os.path.join(model_dir, last_epoch), map_location=input_device)        
+        net.load_state_dict(saved_state['model']) 
+        optimizer.load_state_dict(saved_state['optimizer'])
+    return net, optimizer, input_device, output_device
+
+def save_model(data_dir, model, optimizer, name):
+    model_dir = os.path.join(data_dir, 'model')
+    if not os.path.exists(model_dir):
+        os.mkdir(model_dir)
+    torch.save(dict(model=model.state_dict(), 
+                    optimizer=optimizer.state_dict()), os.path.join(model_dir, name))
+
+def train(data_dir, train_data, val_data, eval_only = False, num_epochs = TRAIN_EPOCHS):    
+
+    net, optimizer, input_device, output_device = load_model(data_dir)
     # load data set
     train_dataset = load_dataset(train_data) if not eval_only else None
     val_dataset = load_dataset(val_data)
 
-    # define optimizers
-    optimizer = create_optimizer(net) if not eval_only else None
     start_epoch = 0
-    # load latest epoch if available        
-    saved_state = get_last_train_state(model_dir)
-    if saved_state is not None:
-        print ('load saved state')
-        net.load_state_dict(saved_state['model'])    
-        if not eval_only:
-            optimizer.load_state_dict(saved_state['optimizer'])
-            start_epoch = saved_state['epoch']
     criteria = {"L1": torch.nn.L1Loss()}    
     metrics = {}
 
@@ -158,10 +160,7 @@ def train(pca_path, train_data, val_data, model_dir, eval_only = False, num_epoc
 
             # save model after epoch
             if (epoch + 1) % save_freq == 0 or epoch == num_epochs:
-                torch.save(dict(epoch=epoch, 
-                    model=net.state_dict(), 
-                    optimizer=optimizer.state_dict()), os.path.join(model_dir, 'shapenet_epoch_%d.pth'% epoch))
-
+                save_model(data_dir, net, optimizer, 'shapenet_epoch_%d.pth'% epoch)
             #validate 
             print('eval at end of epoch')
             metric_vals, loss_vals, preds = eval(net, val_dataset, criteria, metrics, input_device, output_device)
@@ -183,23 +182,10 @@ def run_train():
     evalonly = args.evalonly
     print('eval only = ', evalonly)
     assert data_dir is not None
-    pca_path = os.path.join(data_dir, 'train_pca.npz')
     train_data = os.path.join(data_dir, 'labels_ibug_300W_train.npz')
-    val_data = os.path.join(data_dir, 'labels_ibug_300W_test.npz')
-    model_dir = os.path.join(data_dir, 'model')
-    if not os.path.exists(model_dir):
-        os.mkdir(model_dir)
-    train(pca_path, train_data, val_data, model_dir, evalonly)  
+    val_data = os.path.join(data_dir, 'labels_ibug_300W_test.npz')    
+    train(data_dir, train_data, val_data, evalonly)  
 
-def run_eval(pca_path, val_data, model_dir):
-    n_components = N_COMPONENTS    
-    # load PCA
-    pca = load_pca(pca_path, n_components)
-
-    val_dataset = load_dataset(val_data)
-    saved_state = get_last_train_state(model_dir)
-    assert saved_state is not None
-    net, input_device, output_device = create_nn(pca)
 
 if __name__ == '__main__':
     run_train()

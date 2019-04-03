@@ -1,4 +1,4 @@
-from make_pca import load_landmarks
+from .make_pca import load_landmarks
 import numpy as np
 import cv2 
 from skimage.color import rgb2gray
@@ -72,7 +72,7 @@ def read_data(lmk_xml):
         im, lmks = crop(im, lmks)
         # print(i, ' img shape after crop ', im.shape[:-1])
         lmks = resize_lmks(im, lmks, img_size, imgs[i])        
-        im   = resize(im, (img_size, img_size), anti_aliasing=True, mode='reflect')     
+        im   = resize(im, (img_size, img_size), anti_aliasing=True, mode='reflect')  
         im = grayscale(im)
         data[i] = im 
         labels[i] = lmks        
