@@ -9,6 +9,7 @@ import os
 
 BATCH_SIZE = 1
 N_COMPONENTS = 25
+TRAIN_EPOCHS = 5
 
 def load_pca(pca_path, n_components):
     return np.load(pca_path)['shapes'][:(n_components + 1)]
@@ -80,27 +81,26 @@ def train_single_epoch(model, optimizer, criteria, dataset, input_device, output
 
 def eval(model, val_dataset, criteria, metrics, input_device, output_device):   
     eval_batch_size = 20
-    total_batch = math.ceil(val_dataset.set_size()/ eval_batch_size)
+    total_batch = 2#math.ceil(val_dataset.set_size()/ eval_batch_size)
     results = np.ndarray((val_dataset.set_size(), *val_dataset.get_label(0).shape))
     last_idx = 0
 
-    loss_vals = {k:0 for k in criteria}
-    metric_vals = {k:0 for k in metrics}
-
+    loss_vals = {k:0 for k, _ in criteria.items()}
+    metric_vals = {k:0 for k,_ in metrics.items()}
+    print(loss_vals)
     for i in trange(0, total_batch):
         data, labels = val_dataset.next_batch(eval_batch_size)
         data = torch.from_numpy(data).to(input_device).to(torch.float)
         labels = torch.from_numpy(labels).to(output_device).to(torch.float)
         model.eval()
         with torch.no_grad():
-            preds = model(data)
-            loss_vals = {}
+            preds = model(data)            
             total_loss = 0
             for key, fn in criteria.items():
                 _loss_val = fn(preds, labels)
                 loss_vals[key] += _loss_val.detach()
             for key, metric_fn in metrics.items():
-                metric_vals[key] += metric_fn(preds, labels)
+                metric_vals[key] += metric_fn(preds, labels).detach()
 
         results[last_idx:(last_idx + len(preds)), :, :] = preds
     metric_vals = {k:(v/total_batch) for k, v in metric_vals.items()}
@@ -117,8 +117,7 @@ def get_last_train_state(model_dir):
     return None
 
 
-
-def train(pca_path, train_data, val_data, model_dir, num_epochs = 200):    
+def train(pca_path, train_data, val_data, model_dir, eval_only = False, num_epochs = TRAIN_EPOCHS):    
 
     n_components = N_COMPONENTS    
     # load PCA
@@ -128,40 +127,46 @@ def train(pca_path, train_data, val_data, model_dir, num_epochs = 200):
     net, input_device, output_device = create_nn(pca)
     
     # load data set
-    train_dataset = load_dataset(train_data)    
+    train_dataset = load_dataset(train_data) if not eval_only else None
     val_dataset = load_dataset(val_data)
 
     # define optimizers
-    optimizer = create_optimizer(net)
+    optimizer = create_optimizer(net) if not eval_only else None
     start_epoch = 0
     # load latest epoch if available        
     saved_state = get_last_train_state(model_dir)
     if saved_state is not None:
         print ('load saved state')
         net.load_state_dict(saved_state['model'])    
-        optimizer.load_state_dict(saved_state['optimizer'])
-        start_epoch = saved_state['epoch']
-    # loss function
+        if not eval_only:
+            optimizer.load_state_dict(saved_state['optimizer'])
+            start_epoch = saved_state['epoch']
     criteria = {"L1": torch.nn.L1Loss()}    
-    # train - just set the mode to 'train'    
-    net.train()        
-    save_freq = 1
-    for epoch in range(start_epoch, num_epochs+1):
-        # train a single epoch
-        train_single_epoch(net, optimizer, criteria, train_dataset, input_device, output_device)
+    metrics = {}
 
-        # save model after epoch
-        if (epoch + 1) % save_freq == 0 or epoch == num_epochs:
-            torch.save(dict(epoch=epoch, 
-                model=net.state_dict(), 
-                optimizer=optimizer.state_dict()), os.path.join(model_dir, 'shapenet_epoch_%d.pth'% epoch))
-
-        #validate 
-        print('eval at end of epoch')
-        metric_vals, loss_vals, preds = eval(net, val_dataset, criteria, {}, input_device, output_device)
-
+    if eval_only:
+        print('test on test set')
+        metric_vals, loss_vals, preds = eval(net, val_dataset, criteria, metrics, input_device, output_device)
         print('val loss', loss_vals, ' metrics ', metric_vals)
-        #save state
+    else:
+        # train - just set the mode to 'train'    
+        net.train()        
+        save_freq = 1
+        for epoch in range(start_epoch, num_epochs+1):
+            # train a single epoch
+            train_single_epoch(net, optimizer, criteria, train_dataset, input_device, output_device)
+
+            # save model after epoch
+            if (epoch + 1) % save_freq == 0 or epoch == num_epochs:
+                torch.save(dict(epoch=epoch, 
+                    model=net.state_dict(), 
+                    optimizer=optimizer.state_dict()), os.path.join(model_dir, 'shapenet_epoch_%d.pth'% epoch))
+
+            #validate 
+            print('eval at end of epoch')
+            metric_vals, loss_vals, preds = eval(net, val_dataset, criteria, metrics, input_device, output_device)
+            print('val loss', loss_vals, ' metrics ', metric_vals)
+            #save state
         
         
 def run_train():
@@ -170,8 +175,13 @@ def run_train():
     parser.add_argument("--datadir",
                         help="Path to dataset dir",
                         type=str)
+    parser.add_argument("--evalonly", action="store_true",
+                        help="do not train. only test on validation set",
+                        default=False)
     args = parser.parse_args()
     data_dir = args.datadir
+    evalonly = args.evalonly
+    print('eval only = ', evalonly)
     assert data_dir is not None
     pca_path = os.path.join(data_dir, 'train_pca.npz')
     train_data = os.path.join(data_dir, 'labels_ibug_300W_train.npz')
@@ -179,8 +189,17 @@ def run_train():
     model_dir = os.path.join(data_dir, 'model')
     if not os.path.exists(model_dir):
         os.mkdir(model_dir)
+    train(pca_path, train_data, val_data, model_dir, evalonly)  
 
-    train(pca_path, train_data, val_data, model_dir)  
+def run_eval(pca_path, val_data, model_dir):
+    n_components = N_COMPONENTS    
+    # load PCA
+    pca = load_pca(pca_path, n_components)
+
+    val_dataset = load_dataset(val_data)
+    saved_state = get_last_train_state(model_dir)
+    assert saved_state is not None
+    net, input_device, output_device = create_nn(pca)
 
 if __name__ == '__main__':
     run_train()
