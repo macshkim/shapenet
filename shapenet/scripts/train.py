@@ -91,7 +91,7 @@ def eval(model, val_dataset, criteria, metrics, input_device, output_device):
     return metric_vals, loss_vals, preds
 
 
-def train(pca_path, train_data, val_data, num_epochs = 200):    
+def train(pca_path, train_data, val_data, model_dir, num_epochs = 200):    
 
     n_components = N_COMPONENTS    
     # load PCA
@@ -114,6 +114,7 @@ def train(pca_path, train_data, val_data, num_epochs = 200):
     # train - just set the mode to 'train'
     net.train()    
 
+    save_freq = 20
     for epoch in range(start_epoch, num_epochs+1):
         # train a single epoch
         train_single_epoch(net, optimizer, criteria, train_dataset, input_device, output_device)
@@ -121,7 +122,10 @@ def train(pca_path, train_data, val_data, num_epochs = 200):
         #validate 
         metric_vals, loss_vals, preds = eval(net, val_dataset, criteria, {}, input_device, output_device)
 
-        print('val loss', loss_vals)
+        print('val loss', loss_vals, ' metrics ', metric_vals)
+        #save state
+        if (epoch + 1) % save_freq == 0 or epoch == num_epochs:
+            torch.save(net.stat_dict(), os.path.join(model_dir, 'shapenet_epoch_%d.pth'% epoch))
         
 def run_train():
     import argparse
@@ -134,7 +138,8 @@ def run_train():
     pca_path = os.path.join(data_dir, 'train_pca.npz')
     train_data = os.path.join(data_dir, 'labels_ibug_300W_train.npz')
     val_data = os.path.join(data_dir, 'labels_ibug_300W_test.npz')
-    train(pca_path, train_data, val_data)  
+    model_dir = os.path.join(data_dir, 'model')
+    train(pca_path, train_data, val_data, model_dir)  
 
 if __name__ == '__main__':
     run_train()
