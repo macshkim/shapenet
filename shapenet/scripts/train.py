@@ -22,8 +22,9 @@ def create_nn(pca):
     # check device
     if torch.cuda.is_available():
         device_count = torch.cuda.device_count()
-        if device_count > 1:
-            gpu_ids = [i for i in range(0, device_count)]
+        print('cuda available. no gpu = ', device_count)
+        if device_count > 1:            
+            gpu_ids = [i for i in range(0, device_count)]            
             input_device = torch.device('cuda:%d' % gpu_ids[0])
             net = torch.nn.DataParallel(net.to(input_device),
                     device_ids=gpu_ids,
@@ -35,6 +36,7 @@ def create_nn(pca):
             net = net.to(input_device)
             output_device = torch.device('cuda:0')        
     else:
+        print('gpu not available. train using cpu instead')
         input_device = torch.device('cpu') 
         output_device = torch.device('cpu') 
         net = net.to(input_device)
@@ -115,7 +117,7 @@ def train(pca_path, train_data, val_data, model_dir, num_epochs = 200):
     # train - just set the mode to 'train'
     net.train()    
 
-    save_freq = 20
+    save_freq = 1
     for epoch in range(start_epoch, num_epochs+1):
         # train a single epoch
         train_single_epoch(net, optimizer, criteria, train_dataset, input_device, output_device)
