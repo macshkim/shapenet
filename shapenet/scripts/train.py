@@ -8,6 +8,7 @@ from tqdm.auto import tqdm
 import math
 import os
 from random import randrange
+import re
 
 BATCH_SIZE = 1
 N_COMPONENTS = 68
@@ -132,7 +133,7 @@ def load_pretrain_model(data_dir):
     net = torch.jit.load(os.path.join(data_dir, 'pretrained_face.ptj'), map_location=input_device)    
     return net, None, input_device, output_device
 
-def load_model(data_dir):
+def load_model(data_dir, lr):
     model_dir = os.path.join(data_dir, 'model')
     pca_path = os.path.join(data_dir, 'train_pca.npz')
     n_components = N_COMPONENTS    
@@ -140,16 +141,18 @@ def load_model(data_dir):
     pca = load_pca(pca_path, n_components) 
     # create network 
     net, input_device, output_device = create_nn(pca)
-    optimizer = create_optimizer(net)
+    optimizer = create_optimizer(net, lr)
 
     checkpoints = [n for n in os.listdir(model_dir) if n.startswith('shapenet_epoch_')]
     if len(checkpoints) > 0:
-        print ('load saved state')
-        checkpoints.sort(reverse=True)
+        checkpoints = sorted(checkpoints, key=lambda x: int(re.search('\\d+', x).group(0)), reverse=True)
         last_epoch = checkpoints[0]
+        print ('load saved state from ', last_epoch)
         saved_state = torch.load(os.path.join(model_dir, last_epoch), map_location=input_device)        
         net.load_state_dict(saved_state['model']) 
         optimizer.load_state_dict(saved_state['optimizer'])
+        for g in optimizer.param_groups:
+            g['lr'] = lr
     return net, optimizer, input_device, output_device
 
 def save_model(data_dir, model, optimizer, name):
@@ -171,9 +174,9 @@ def predict(model, img, input_device):
         preds = model(data)
         return preds.cpu()[0]
 
-def train(data_dir, train_data, val_data, eval_only = False, num_epochs = TRAIN_EPOCHS):    
-
-    net, optimizer, input_device, output_device = load_model(data_dir)
+def train(data_dir, train_data, val_data, lr, eval_only = False, num_epochs = TRAIN_EPOCHS):    
+    print('start training. lr = ', lr)
+    net, optimizer, input_device, output_device = load_model(data_dir, lr)
     # load data set
     train_dataset = load_dataset(train_data) if not eval_only else None
     val_dataset = load_dataset(val_data)
@@ -218,14 +221,17 @@ def run_train():
     parser.add_argument("--evalonly", action="store_true",
                         help="do not train. only test on validation set",
                         default=False)
+    parser.add_argument("--learnrate", type=float, default=0.0001,
+                        help="Learning rate")
     args = parser.parse_args()
     data_dir = args.datadir
     evalonly = args.evalonly
-    print('eval only = ', evalonly)
+    lr = args.learnrate
+    
     assert data_dir is not None
     train_data = os.path.join(data_dir, 'labels_ibug_300W_train.npz')
     val_data = os.path.join(data_dir, 'labels_ibug_300W_test.npz')    
-    train(data_dir, train_data, val_data, evalonly)  
+    train(data_dir, train_data, val_data, lr, evalonly)  
 
 
 if __name__ == '__main__':

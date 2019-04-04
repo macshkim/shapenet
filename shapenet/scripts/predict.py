@@ -48,11 +48,12 @@ def get_lmks(data_dir, img_path):
 def test_on_train(data_dir):
     train_data = os.path.join(data_dir, 'labels_ibug_300W_train.npz')
     ds = DataSet(train_data)
-    model, _, input_device, output_device = load_pretrain_model(data_dir)
-    lmks = predict(model, ds.data[10:11], input_device)
-    img = ds.data[10]
+    model, _, input_device, output_device = load_model(data_dir)
+    lmks = predict(model, ds.data[0:1], input_device)
+    img = ds.data[0]
     img = img.reshape(*img.shape[1:])
-    view_img(img, lmks[:, [1, 0]])
+    # view_img(img, lmks[:, [1, 0]])
+    view_img(img, lmks, ds.labels[0])
 
 def examine(data_dir):
     print('Pre-trained')
