@@ -37,12 +37,14 @@ def crop(img, lmks):
 def grayscale(img):
     return rgb2gray(img)# .reshape(img.shape[:-1], 1)
 
-def view_img(img, lmks):
+def view_img(img, lmks, ref_lmks = None):
     plt.imshow(img, cmap="gray")
     # top, left, w, h = bound
     # p = patches.Rectangle((top,left),w, h,linewidth=1,edgecolor='r',facecolor='none')
     plt.scatter(lmks[:, 0], lmks[:, 1], c="C0", s=15)
     # plt.add_patch(p)
+    if ref_lmks is not None:
+        plt.scatter(ref_lmks[:, 0], ref_lmks[:, 1], c="C1", s=15)
     plt.show()
 
 def resize_lmks(img, lmks, img_size, name):

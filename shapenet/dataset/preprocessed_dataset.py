@@ -3,9 +3,9 @@ import numpy as np
 class DataSet:
     def __init__(self, path):
         ds = np.load(path)
-        self.data = ds['data']
+        self.data = ds['data'][0:1]
         self.data = self.data.reshape(self.data.shape[0], 1, *self.data.shape[1:])
-        self.labels = ds['labels']
+        self.labels = ds['labels'][0:1]
         self.next_sample = 0
 
     def set_size(self):

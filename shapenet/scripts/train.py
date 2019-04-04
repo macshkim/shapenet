@@ -1,5 +1,6 @@
 from ..dataset import DataSet
 from ..networks import ShapeNet
+from .preprocess import view_img
 import numpy as np
 import torch
 from tqdm import trange
@@ -9,7 +10,7 @@ import os
 
 BATCH_SIZE = 1
 N_COMPONENTS = 25
-TRAIN_EPOCHS = 5
+TRAIN_EPOCHS = 1000
 
 def load_pca(pca_path, n_components):
     return np.load(pca_path)['shapes'][:(n_components + 1)]
@@ -50,7 +51,7 @@ def create_optimizer(model, lr=0.0001):
 
 def train_single_epoch(model, optimizer, criteria, dataset, input_device, output_device):
     batch_size = BATCH_SIZE
-    total_batch = math.ceil(dataset.set_size() / batch_size)
+    total_batch = 1 # math.ceil(dataset.set_size() / batch_size)
     print_every = 100
     total_loss = 0
 
@@ -74,7 +75,7 @@ def train_single_epoch(model, optimizer, criteria, dataset, input_device, output
             train_loss.backward()
             optimizer.step()           
 
-        if (i + 1) % print_every == 0:
+        if (i + 1) % print_every == 0 or True:
             tqdm.write('avg. train loss %.2f' % (total_loss / print_every))
             total_loss = 0
 
@@ -135,6 +136,18 @@ def save_model(data_dir, model, optimizer, name):
     torch.save(dict(model=model.state_dict(), 
                     optimizer=optimizer.state_dict()), os.path.join(model_dir, name))
 
+def predict(model, img, input_device):
+    if len(img.shape) < 4:
+        data = np.array([img.reshape(1, *img.shape)])
+        
+    else:
+        data = img    
+    data = torch.from_numpy(data).to(input_device).to(torch.float)
+    model.eval()
+    with torch.no_grad():
+        preds = model(data)
+        return preds.cpu()[0]
+
 def train(data_dir, train_data, val_data, eval_only = False, num_epochs = TRAIN_EPOCHS):    
 
     net, optimizer, input_device, output_device = load_model(data_dir)
@@ -153,21 +166,25 @@ def train(data_dir, train_data, val_data, eval_only = False, num_epochs = TRAIN_
     else:
         # train - just set the mode to 'train'    
         net.train()        
-        save_freq = 1
+        save_freq = 50
         for epoch in range(start_epoch, num_epochs+1):
             # train a single epoch
-            train_single_epoch(net, optimizer, criteria, train_dataset, input_device, output_device)
+            train_single_epoch(net, optimizer, criteria, train_dataset, input_device, output_device)            
 
             # save model after epoch
             if (epoch + 1) % save_freq == 0 or epoch == num_epochs:
                 save_model(data_dir, net, optimizer, 'shapenet_epoch_%d.pth'% epoch)
+                # test 
+                img = train_dataset.data[0]
+                img = img.reshape(*img.shape[1:])
+                lmks = predict(net, img, input_device)
+                view_img(img, lmks, train_dataset.labels[0])
             #validate 
-            print('eval at end of epoch')
-            metric_vals, loss_vals, preds = eval(net, val_dataset, criteria, metrics, input_device, output_device)
-            print('val loss', loss_vals, ' metrics ', metric_vals)
+            # print('eval at end of epoch')
+            # metric_vals, loss_vals, preds = eval(net, val_dataset, criteria, metrics, input_device, output_device)
+            # print('val loss', loss_vals, ' metrics ', metric_vals)
             #save state
-        
-        
+
 def run_train():
     import argparse
     parser = argparse.ArgumentParser()
