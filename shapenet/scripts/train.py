@@ -193,10 +193,11 @@ def train(data_dir, train_data, val_data, lr, eval_only = False, num_epochs = TR
         # train - just set the mode to 'train'    
         net.train()        
         save_freq = 1
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.5)
         for epoch in range(start_epoch, num_epochs+1):
             # train a single epoch
-            train_single_epoch(net, optimizer, criteria, train_dataset, input_device, output_device)            
-
+            scheduler.step()
+            train_single_epoch(net, optimizer, criteria, train_dataset, input_device, output_device)                        
             # save model after epoch
             if (epoch + 1) % save_freq == 0 or epoch == num_epochs:
                 save_model(data_dir, net, optimizer, 'shapenet_epoch_%d.pth'% epoch)
