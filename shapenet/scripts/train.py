@@ -142,18 +142,20 @@ def load_model(data_dir, lr):
     # create network 
     net, input_device, output_device = create_nn(pca)
     optimizer = create_optimizer(net, lr)
-
+    last_epoch = 0
     checkpoints = [n for n in os.listdir(model_dir) if n.startswith('shapenet_epoch_')]
     if len(checkpoints) > 0:
-        checkpoints = sorted(checkpoints, key=lambda x: int(re.search('\\d+', x).group(0)), reverse=True)
-        last_epoch = checkpoints[0]
-        print ('load saved state from ', last_epoch)
-        saved_state = torch.load(os.path.join(model_dir, last_epoch), map_location=input_device)        
+        get_epoch = lambda x: int(re.search('\\d+', x).group(0))
+        checkpoints = sorted(checkpoints, key=get_epoch, reverse=True)
+        last_epoch_f = checkpoints[0]
+        print ('load saved state from ', last_epoch_f)
+        saved_state = torch.load(os.path.join(model_dir, last_epoch_f), map_location=input_device)        
         net.load_state_dict(saved_state['model']) 
         optimizer.load_state_dict(saved_state['optimizer'])
         for g in optimizer.param_groups:
             g['lr'] = lr
-    return net, optimizer, input_device, output_device
+        last_epoch = get_epoch(last_epoch_f)
+    return net, optimizer, input_device, output_device, last_epoch
 
 def save_model(data_dir, model, optimizer, name):
     model_dir = os.path.join(data_dir, 'model')
@@ -176,12 +178,12 @@ def predict(model, img, input_device):
 
 def train(data_dir, train_data, val_data, lr, eval_only = False, num_epochs = TRAIN_EPOCHS):    
     print('start training. lr = ', lr)
-    net, optimizer, input_device, output_device = load_model(data_dir, lr)
+    net, optimizer, input_device, output_device, last_epoch = load_model(data_dir, lr)
     # load data set
     train_dataset = load_dataset(train_data) if not eval_only else None
     val_dataset = load_dataset(val_data)
 
-    start_epoch = 0
+    start_epoch = last_epoch
     criteria = {"L1": torch.nn.L1Loss()}    
     metrics = {}
 
