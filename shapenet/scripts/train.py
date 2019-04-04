@@ -13,7 +13,7 @@ import re
 BATCH_SIZE = 1
 N_COMPONENTS = 68
 TRAIN_EPOCHS = 1000
-DEBUG_SINGLE_IMG = 0
+DEBUG_SINGLE_IMG = None
 
 def load_pca(pca_path, n_components):
     return np.load(pca_path)['shapes'][:(n_components + 1)]
