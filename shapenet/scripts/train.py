@@ -9,7 +9,7 @@ import math
 import os
 
 BATCH_SIZE = 1
-N_COMPONENTS = 30
+N_COMPONENTS = 50
 TRAIN_EPOCHS = 1000
 
 def load_pca(pca_path, n_components):
@@ -44,7 +44,7 @@ def create_nn(pca):
         net = net.to(input_device)
     return net, input_device, output_device
 
-def create_optimizer(model, lr=0.0002):
+def create_optimizer(model, lr=0.0001):
     # TODO: read more about mix-precision optimizer https://forums.fast.ai/t/mixed-precision-training/20720
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     return optimizer

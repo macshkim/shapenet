@@ -5,7 +5,7 @@ from ..layer import HomogeneousShapeLayer
 
 class ShapeNet(nn.Module):
     
-    def __init__(self, pca, feature_extract='resnet'):
+    def __init__(self, pca, feature_extract=None):
         super(ShapeNet, self).__init__()
         self.shape_layer = HomogeneousShapeLayer(pca, 2)
         self.num_out_params = self.shape_layer.num_params
