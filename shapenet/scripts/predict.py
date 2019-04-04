@@ -49,51 +49,22 @@ def get_lmks(data_dir, img_path):
 def test_on_train(data_dir):
     train_data = os.path.join(data_dir, 'labels_ibug_300W_train.npz')
     ds = DataSet(train_data)
-    model, _, input_device, output_device = load_model(data_dir, 0.0001)
-    lmks = predict(model, ds.data[491:492], input_device)
-    img = ds.data[491]
+    model, _, input_device, output_device, _ = load_model(data_dir, 0.0001)
+    # model, _, input_device, output_device = load_pretrain_model(data_dir)
+    lmks = predict(model, ds.data[391:392], input_device)
+    img = ds.data[391]
     img = img.reshape(*img.shape[1:])
     # view_img(img, lmks[:, [1, 0]])
-    view_img(img, lmks, ds.labels[491])
+    view_img(img, lmks, ds.labels[391])
 
 def examine(data_dir):
     print('Pre-trained')
     model, _, _, _ = load_pretrain_model(data_dir)
-    print(torch_summarize(model, show_weights=False))
+    print(model)
     print('=======================')
     print('Self-trained')
-    model, _, _, _ = load_model(data_dir, 0.0001)
-    print(torch_summarize(model, show_weights=False))
-
-def torch_summarize(model, show_weights=True, show_parameters=True):
-    """
-    https://stackoverflow.com/questions/42480111/model-summary-in-pytorch
-    Summarizes torch model by showing trainable parameters and weights.
-    """
-    tmpstr = model.__class__.__name__ + ' (\n'
-    for key, module in model._modules.items():
-        # if it contains layers let call it recursively to get params and weights
-        if type(module) in [
-            torch.nn.modules.container.Container,
-            torch.nn.modules.container.Sequential
-        ]:
-            modstr = torch_summarize(module)
-        else:
-            modstr = module.__repr__()
-        modstr = _addindent(modstr, 2)
-
-        params = sum([np.prod(p.size()) for p in module.parameters()])
-        weights = tuple([tuple(p.size()) for p in module.parameters()])
-
-        tmpstr += '  (' + key + '): ' + modstr 
-        if show_weights:
-            tmpstr += ', weights={}'.format(weights)
-        if show_parameters:
-            tmpstr +=  ', parameters={}'.format(params)
-        tmpstr += '\n'   
-
-    tmpstr = tmpstr + ')'
-    return tmpstr
+    model, _, _, _, _ = load_model(data_dir, 0.0001)
+    print(model)
 
 if __name__ == '__main__':
     data_dir = '/home/tamvm/Downloads/ibug_300W_large_face_landmark_dataset'

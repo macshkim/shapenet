@@ -13,13 +13,13 @@ import re
 BATCH_SIZE = 1
 N_COMPONENTS = 68
 TRAIN_EPOCHS = 1000
-DEBUG_SINGLE_IMG = None
+DEBUG_SINGLE_IMG = 0
 
 def load_pca(pca_path, n_components):
     return np.load(pca_path)['shapes'][:(n_components + 1)]
 
-def load_dataset(path):
-    return DataSet(path)
+def load_dataset(path):    
+    return DataSet(path, 1 if DEBUG_SINGLE_IMG is not None else None)
 
 def create_nn(pca):
     net = ShapeNet(pca)
@@ -56,19 +56,17 @@ def train_single_epoch(model, optimizer, criteria, dataset, input_device, output
     batch_size = BATCH_SIZE
     if DEBUG_SINGLE_IMG is None:
         total_batch = math.ceil(dataset.set_size() / batch_size)
-        print_every = 100
     else:
-        total_batch = 200
-        print_every = 1
+        total_batch = 50
 
     total_loss = 0
 
     for i in trange(0, total_batch):
-        if DEBUG_SINGLE_IMG is not None:
-            data, labels = dataset.data[DEBUG_SINGLE_IMG], dataset.labels[DEBUG_SINGLE_IMG]
-            data = data.reshape(data.shape[0], 1, *data.shape[1:])
-        else:
-            data, labels = dataset.next_batch(batch_size)
+        # if DEBUG_SINGLE_IMG is not None:
+        #     data, labels = dataset.data[DEBUG_SINGLE_IMG], dataset.labels[DEBUG_SINGLE_IMG]
+        #     data = data.reshape(data.shape[0], 1, *data.shape[1:])
+        # else:
+        data, labels = dataset.next_batch(batch_size)
         data = torch.from_numpy(data).to(input_device).to(torch.float)
         labels = torch.from_numpy(labels).to(output_device).to(torch.float)
         model.train()
@@ -87,16 +85,14 @@ def train_single_epoch(model, optimizer, criteria, dataset, input_device, output
             train_loss.backward()
             optimizer.step()           
 
-        if (i + 1) % print_every == 0 or True:
-            tqdm.write('avg. train loss %.2f' % (total_loss / print_every))
-            total_loss = 0
-
-            # test 
-            # t = randrange(0, 100)
-            # img = dataset.data[t]
-            # img = img.reshape(*img.shape[1:])
-            # lmks = predict(model, img, input_device)
-            # view_img(img, lmks, dataset.labels[t])
+    # print('avg. train loss %.2f' % (total_loss / total_batch))
+    # total_loss = 0
+    # test 
+    # t = randrange(0, 100)
+    # img = dataset.data[t]
+    # img = img.reshape(*img.shape[1:])
+    # lmks = predict(model, img, input_device)
+    # view_img(img, lmks, dataset.labels[t])
 
 
 def eval(model, val_dataset, criteria, metrics, input_device, output_device):   
@@ -107,7 +103,7 @@ def eval(model, val_dataset, criteria, metrics, input_device, output_device):
 
     loss_vals = {k:0 for k, _ in criteria.items()}
     metric_vals = {k:0 for k,_ in metrics.items()}
-    print(loss_vals)
+    
     for i in trange(0, total_batch):
         data, labels = val_dataset.next_batch(eval_batch_size)
         data = torch.from_numpy(data).to(input_device).to(torch.float)
@@ -185,7 +181,7 @@ def train(data_dir, train_data, val_data, lr, eval_only = False, num_epochs = TR
 
     start_epoch = last_epoch
     criteria = {"L1": torch.nn.L1Loss()}    
-    metrics = {}
+    metrics = {"MSE": torch.nn.MSELoss()}
 
     if eval_only:
         print('test on test set')
@@ -194,11 +190,13 @@ def train(data_dir, train_data, val_data, lr, eval_only = False, num_epochs = TR
     else:
         # train - just set the mode to 'train'    
         net.train()        
-        save_freq = 1
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.5)
+        save_freq = 100
+        # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.5)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                mode='min', threshold=1e-4, threshold_mode='rel',
+                factor=0.1, patience=5, cooldown=0, min_lr=0, eps=1e-8)
         for epoch in range(start_epoch, num_epochs+1):
-            # train a single epoch
-            scheduler.step()
+            # train a single epoch            
             train_single_epoch(net, optimizer, criteria, train_dataset, input_device, output_device)                        
             # save model after epoch
             if (epoch + 1) % save_freq == 0 or epoch == num_epochs:
@@ -209,11 +207,11 @@ def train(data_dir, train_data, val_data, lr, eval_only = False, num_epochs = TR
                 lmks = predict(net, img, input_device)
                 view_img(img, lmks, train_dataset.labels[0])
             # validate 
-            # print('eval at end of epoch')
-            if DEBUG_SINGLE_IMG is None:
-                metric_vals, loss_vals, preds = eval(net, val_dataset, criteria, metrics, input_device, output_device)
-                print('val loss', loss_vals, ' metrics ', metric_vals)
+            # print('eval at end of epoch')            
+            metric_vals, loss_vals, preds = eval(net, val_dataset if DEBUG_SINGLE_IMG is None else train_dataset, criteria, metrics, input_device, output_device)
+            tqdm.write('val loss', loss_vals, ' metrics ', metric_vals)
             # TODO: save best
+            scheduler.step(metrics=metric_vals['MSE'])
 
 def run_train():
     import argparse

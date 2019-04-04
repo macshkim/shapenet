@@ -1,11 +1,15 @@
 import numpy as np
 
 class DataSet:
-    def __init__(self, path):
+    def __init__(self, path, limit=None):
         ds = np.load(path)
         self.data = ds['data']#[0:1]
+        if limit is not None:
+            self.data = self.data[0:limit]
         self.data = self.data.reshape(self.data.shape[0], 1, *self.data.shape[1:])
         self.labels = ds['labels']#[0:1]
+        if limit is not None:
+            self.labels = self.labels[0:limit]
         self.next_sample = 0
 
     def set_size(self):
