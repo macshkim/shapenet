@@ -44,14 +44,14 @@ def create_nn(pca):
         net = net.to(input_device)
     return net, input_device, output_device
 
-def create_optimizer(model, lr=0.0001):
+def create_optimizer(model, lr=0.0005):
     # TODO: read more about mix-precision optimizer https://forums.fast.ai/t/mixed-precision-training/20720
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     return optimizer
 
 def train_single_epoch(model, optimizer, criteria, dataset, input_device, output_device):
     batch_size = BATCH_SIZE
-    total_batch = 1 # math.ceil(dataset.set_size() / batch_size)
+    total_batch = math.ceil(dataset.set_size() / batch_size)
     print_every = 100
     total_loss = 0
 
@@ -82,7 +82,7 @@ def train_single_epoch(model, optimizer, criteria, dataset, input_device, output
 
 def eval(model, val_dataset, criteria, metrics, input_device, output_device):   
     eval_batch_size = 20
-    total_batch = 2#math.ceil(val_dataset.set_size()/ eval_batch_size)
+    total_batch = math.ceil(val_dataset.set_size()/ eval_batch_size)
     results = np.ndarray((val_dataset.set_size(), *val_dataset.get_label(0).shape))
     last_idx = 0
 
@@ -166,7 +166,7 @@ def train(data_dir, train_data, val_data, eval_only = False, num_epochs = TRAIN_
     else:
         # train - just set the mode to 'train'    
         net.train()        
-        save_freq = 50
+        save_freq = 1
         for epoch in range(start_epoch, num_epochs+1):
             # train a single epoch
             train_single_epoch(net, optimizer, criteria, train_dataset, input_device, output_device)            
@@ -179,11 +179,11 @@ def train(data_dir, train_data, val_data, eval_only = False, num_epochs = TRAIN_
                 img = img.reshape(*img.shape[1:])
                 lmks = predict(net, img, input_device)
                 view_img(img, lmks, train_dataset.labels[0])
-            #validate 
+            # validate 
             # print('eval at end of epoch')
-            # metric_vals, loss_vals, preds = eval(net, val_dataset, criteria, metrics, input_device, output_device)
-            # print('val loss', loss_vals, ' metrics ', metric_vals)
-            #save state
+            metric_vals, loss_vals, preds = eval(net, val_dataset, criteria, metrics, input_device, output_device)
+            print('val loss', loss_vals, ' metrics ', metric_vals)
+            # TODO: save best
 
 def run_train():
     import argparse

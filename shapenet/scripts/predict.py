@@ -1,5 +1,5 @@
 import dlib
-from .train import load_model
+from .train import load_model, predict
 from ..dataset import DataSet
 from .preprocess import grayscale, IMAGE_SIZE, CROP_OFFSET, view_img
 from skimage.transform import resize
