@@ -9,7 +9,7 @@ import math
 import os
 
 BATCH_SIZE = 1
-N_COMPONENTS = 50
+N_COMPONENTS = 68
 TRAIN_EPOCHS = 1000
 
 def load_pca(pca_path, n_components):
