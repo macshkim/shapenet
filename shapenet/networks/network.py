@@ -10,7 +10,7 @@ class ShapeNet(nn.Module):
         self.shape_layer = HomogeneousShapeLayer(pca, 2)
         self.num_out_params = self.shape_layer.num_params
         in_channels = 1
-        norm_class = None
+        norm_class = nn.InstanceNorm2d
         if feature_extract == 'inception_v3':
             self.feature_extract_layer = torchvision.models.inception_v3(False, num_classes=self.num_out_params, aux_logits=False)
             self.feature_extract_layer.Conv2d_1a_3x3 = \
@@ -23,7 +23,8 @@ class ShapeNet(nn.Module):
                                                 stride=2, padding=3,
                                                 bias=False)
         else:
-            self.feature_extract_layer = Img224x224Kernel7x7SeparatedDims(in_channels, self.num_out_params, norm_class)        
+            self.feature_extract_layer = \
+                Img224x224Kernel7x7SeparatedDims(in_channels, self.num_out_params, norm_class)        
 
     def forward(self, imgs):
         """

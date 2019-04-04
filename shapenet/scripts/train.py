@@ -7,10 +7,12 @@ from tqdm import trange
 from tqdm.auto import tqdm
 import math
 import os
+from random import randrange
 
 BATCH_SIZE = 1
 N_COMPONENTS = 68
 TRAIN_EPOCHS = 1000
+DEBUG_SINGLE_IMG = 0
 
 def load_pca(pca_path, n_components):
     return np.load(pca_path)['shapes'][:(n_components + 1)]
@@ -44,19 +46,28 @@ def create_nn(pca):
         net = net.to(input_device)
     return net, input_device, output_device
 
-def create_optimizer(model, lr=0.0005):
+def create_optimizer(model, lr=0.0001):
     # TODO: read more about mix-precision optimizer https://forums.fast.ai/t/mixed-precision-training/20720
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     return optimizer
 
 def train_single_epoch(model, optimizer, criteria, dataset, input_device, output_device):
     batch_size = BATCH_SIZE
-    total_batch = math.ceil(dataset.set_size() / batch_size)
-    print_every = 100
+    if DEBUG_SINGLE_IMG is None:
+        total_batch = math.ceil(dataset.set_size() / batch_size)
+        print_every = 100
+    else:
+        total_batch = 200
+        print_every = 1
+
     total_loss = 0
 
     for i in trange(0, total_batch):
-        data, labels = dataset.next_batch(batch_size)
+        if DEBUG_SINGLE_IMG is not None:
+            data, labels = dataset.data[DEBUG_SINGLE_IMG], dataset.labels[DEBUG_SINGLE_IMG]
+            data = data.reshape(data.shape[0], 1, *data.shape[1:])
+        else:
+            data, labels = dataset.next_batch(batch_size)
         data = torch.from_numpy(data).to(input_device).to(torch.float)
         labels = torch.from_numpy(labels).to(output_device).to(torch.float)
         model.train()
@@ -78,6 +89,13 @@ def train_single_epoch(model, optimizer, criteria, dataset, input_device, output
         if (i + 1) % print_every == 0 or True:
             tqdm.write('avg. train loss %.2f' % (total_loss / print_every))
             total_loss = 0
+
+            # test 
+            # t = randrange(0, 100)
+            # img = dataset.data[t]
+            # img = img.reshape(*img.shape[1:])
+            # lmks = predict(model, img, input_device)
+            # view_img(img, lmks, dataset.labels[t])
 
 
 def eval(model, val_dataset, criteria, metrics, input_device, output_device):   
@@ -108,6 +126,11 @@ def eval(model, val_dataset, criteria, metrics, input_device, output_device):
     loss_vals = {k:(v/total_batch) for k, v in loss_vals.items()}
     return metric_vals, loss_vals, results
 
+
+def load_pretrain_model(data_dir):
+    input_device = output_device = torch.device('cpu')
+    net = torch.jit.load(os.path.join(data_dir, 'pretrained_face.ptj'), map_location=input_device)    
+    return net, None, input_device, output_device
 
 def load_model(data_dir):
     model_dir = os.path.join(data_dir, 'model')
@@ -174,15 +197,16 @@ def train(data_dir, train_data, val_data, eval_only = False, num_epochs = TRAIN_
             # save model after epoch
             if (epoch + 1) % save_freq == 0 or epoch == num_epochs:
                 save_model(data_dir, net, optimizer, 'shapenet_epoch_%d.pth'% epoch)
-                # test 
+                # # test 
                 img = train_dataset.data[0]
                 img = img.reshape(*img.shape[1:])
                 lmks = predict(net, img, input_device)
                 view_img(img, lmks, train_dataset.labels[0])
             # validate 
             # print('eval at end of epoch')
-            metric_vals, loss_vals, preds = eval(net, val_dataset, criteria, metrics, input_device, output_device)
-            print('val loss', loss_vals, ' metrics ', metric_vals)
+            if DEBUG_SINGLE_IMG is None:
+                metric_vals, loss_vals, preds = eval(net, val_dataset, criteria, metrics, input_device, output_device)
+                print('val loss', loss_vals, ' metrics ', metric_vals)
             # TODO: save best
 
 def run_train():

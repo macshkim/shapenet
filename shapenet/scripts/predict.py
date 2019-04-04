@@ -1,5 +1,5 @@
 import dlib
-from .train import load_model, predict
+from .train import load_model, predict, load_pretrain_model
 from ..dataset import DataSet
 from .preprocess import grayscale, IMAGE_SIZE, CROP_OFFSET, view_img
 from skimage.transform import resize
@@ -40,7 +40,7 @@ def get_lmks(data_dir, img_path):
     img = grayscale(img)
     img = resize(img, (IMAGE_SIZE, IMAGE_SIZE), anti_aliasing=True, mode='reflect')   
     # predict
-    model, _, input_device, output_device = load_model(data_dir)
+    model, _, input_device, output_device = load_pretrain_model(data_dir)
     lmks = predict(model, img, input_device)
     print(len(lmks))
     view_img(img, lmks)
@@ -48,15 +48,23 @@ def get_lmks(data_dir, img_path):
 def test_on_train(data_dir):
     train_data = os.path.join(data_dir, 'labels_ibug_300W_train.npz')
     ds = DataSet(train_data)
-    model, _, input_device, output_device = load_model(data_dir)
-
-    lmks = predict(model, ds.data, input_device)
-    img = ds.data[0]
+    model, _, input_device, output_device = load_pretrain_model(data_dir)
+    lmks = predict(model, ds.data[10:11], input_device)
+    img = ds.data[10]
     img = img.reshape(*img.shape[1:])
-    view_img(img, lmks)
+    view_img(img, lmks[:, [1, 0]])
+
+def examine(data_dir):
+    print('Pre-trained')
+    model, _, _, _ = load_pretrain_model(data_dir)
+    print(model)
+    print('=======================')
+    print('Self-trained')
+    model, _, _, _ = load_model(data_dir)
+    print(model)
 
 if __name__ == '__main__':
     data_dir = '/home/tamvm/Downloads/ibug_300W_large_face_landmark_dataset'
-    target = '/home/tamvm/Downloads/ibug_300W_large_face_landmark_dataset/helen/testset/3191256033_1.jpg'
+    target = '/home/tamvm/Downloads/ibug_300W_large_face_landmark_dataset/helen/trainset/2344967158_1.jpg'
     # get_lmks(data_dir, target)
     test_on_train(data_dir)
