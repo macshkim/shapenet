@@ -41,9 +41,9 @@ def get_lmks(data_dir, img_path):
     img = grayscale(img)
     img = resize(img, (IMAGE_SIZE, IMAGE_SIZE), anti_aliasing=True, mode='reflect')   
     # predict
-    model, _, input_device, output_device = load_pretrain_model(data_dir)
+    model, _, input_device, output_device, _ = load_model(data_dir, 0.0001)
     lmks = predict(model, img, input_device)
-    print(len(lmks))
+    # print(len(lmks))
     view_img(img, lmks)
 
 def test_on_train(data_dir):
@@ -68,6 +68,7 @@ def examine(data_dir):
 
 if __name__ == '__main__':
     data_dir = '/home/tamvm/Downloads/ibug_300W_large_face_landmark_dataset'
-    target = '/home/tamvm/Downloads/ibug_300W_large_face_landmark_dataset/helen/trainset/2344967158_1.jpg'
-    # get_lmks(data_dir, target)
+    # target = '/home/tamvm/Downloads/ibug_300W_large_face_landmark_dataset/helen/trainset/2344967158_1.jpg'
+    target = '/home/tamvm/Downloads/98064f2f0389e1d7b898.jpg'
+    #get_lmks(data_dir, target)
     test_on_train(data_dir)

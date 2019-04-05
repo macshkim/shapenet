@@ -3,7 +3,6 @@
 import torch
 from .abstract_network import AbstractFeatureExtractor
 
-
 class Conv2dRelu(torch.nn.Module):
     """
     Block holding one Conv2d and one ReLU layer

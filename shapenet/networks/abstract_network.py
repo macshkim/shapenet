@@ -2,49 +2,47 @@
 
 import torch
 from abc import abstractmethod
-from delira.models import AbstractPyTorchNetwork
+# from delira.models import AbstractPyTorchNetwork
 from .utils import CustomGroupNorm
+# class AbstractShapeNetwork(torch.nn.Module):
+#     """
+#     Abstract base Class to provide a convenient norm_class_mapping
 
+#     """
+#     def __init__(self, **kwargs):
+#         """
 
-class AbstractShapeNetwork(AbstractPyTorchNetwork):
-    """
-    Abstract base Class to provide a convenient norm_class_mapping
+#         Parameters
+#         ----------
+#         **kwargs :
+#             keyword arguments (forwarded to parent class)
 
-    """
-    def __init__(self, **kwargs):
-        """
+#         """
+#         super().__init__(**kwargs)
 
-        Parameters
-        ----------
-        **kwargs :
-            keyword arguments (forwarded to parent class)
+#     @staticmethod
+#     def norm_type_to_class(norm_type):
+#         """
+#         helper function to map a string to an actual normalization class
 
-        """
-        super().__init__(**kwargs)
+#         Parameters
+#         ----------
+#         norm_type : str
+#             string specifying the normalization class
 
-    @staticmethod
-    def norm_type_to_class(norm_type):
-        """
-        helper function to map a string to an actual normalization class
+#         Returns
+#         -------
+#         type
+#             Normalization Class (subclass of :class:`torch.nn.Module`)
 
-        Parameters
-        ----------
-        norm_type : str
-            string specifying the normalization class
+#         """
+#         norm_dict = {'instance': torch.nn.InstanceNorm2d,
+#                      'batch': torch.nn.BatchNorm2d,
+#                      'group': CustomGroupNorm}
 
-        Returns
-        -------
-        type
-            Normalization Class (subclass of :class:`torch.nn.Module`)
+#         norm_class = norm_dict.get(norm_type, None)
 
-        """
-        norm_dict = {'instance': torch.nn.InstanceNorm2d,
-                     'batch': torch.nn.BatchNorm2d,
-                     'group': CustomGroupNorm}
-
-        norm_class = norm_dict.get(norm_type, None)
-
-        return norm_class
+#         return norm_class
 
 
 class AbstractFeatureExtractor(torch.nn.Module):
