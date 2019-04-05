@@ -104,7 +104,7 @@ def eval(model, val_dataset, criteria, metrics, input_device, output_device):
     loss_vals = {k:0 for k, _ in criteria.items()}
     metric_vals = {k:0 for k,_ in metrics.items()}
     
-    for i in trange(0, total_batch):
+    for i in range(0, total_batch):
         data, labels = val_dataset.next_batch(eval_batch_size)
         data = torch.from_numpy(data).to(input_device).to(torch.float)
         labels = torch.from_numpy(labels).to(output_device).to(torch.float)
@@ -190,10 +190,11 @@ def train(data_dir, train_data, val_data, lr, eval_only = False, num_epochs = TR
     else:
         # train - just set the mode to 'train'    
         net.train()        
-        save_freq = 100
+        save_freq = 2
         # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.5)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                 mode='min', threshold=1e-4, threshold_mode='rel',
+                verbose=True,
                 factor=0.1, patience=5, cooldown=0, min_lr=0, eps=1e-8)
         for epoch in range(start_epoch, num_epochs+1):
             # train a single epoch            
@@ -209,7 +210,7 @@ def train(data_dir, train_data, val_data, lr, eval_only = False, num_epochs = TR
             # validate 
             # print('eval at end of epoch')            
             metric_vals, loss_vals, preds = eval(net, val_dataset if DEBUG_SINGLE_IMG is None else train_dataset, criteria, metrics, input_device, output_device)
-            tqdm.write('val loss', loss_vals, ' metrics ', metric_vals)
+            tqdm.write('val loss = %.2f metric = %.2f ' % (loss_vals['L1'], metric_vals['MSE']))
             # TODO: save best
             scheduler.step(metrics=metric_vals['MSE'])
 
