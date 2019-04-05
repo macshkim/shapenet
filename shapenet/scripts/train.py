@@ -190,17 +190,17 @@ def train(data_dir, train_data, val_data, lr, eval_only = False, num_epochs = TR
     else:
         # train - just set the mode to 'train'    
         net.train()        
-        save_freq = 2
+        save_freq = 100
         # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.5)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                 mode='min', threshold=1e-4, threshold_mode='rel',
                 verbose=True,
                 factor=0.1, patience=5, cooldown=0, min_lr=0, eps=1e-8)
-        for epoch in range(start_epoch, start_epoch + num_epochs):
+        for epoch in range(start_epoch, start_epoch +num_epochs):
             # train a single epoch            
             train_single_epoch(net, optimizer, criteria, train_dataset, input_device, output_device)                        
             # save model after epoch
-            if (epoch + 1) % save_freq == 0 or epoch == num_epochs:
+            if (epoch + 1) % save_freq == 0 or epoch == start_epoch +num_epochs:
                 save_model(data_dir, net, optimizer, 'shapenet_epoch_%d.pth'% epoch)
                 # # test 
                 img = train_dataset.data[0]
