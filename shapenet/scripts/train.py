@@ -149,8 +149,8 @@ def load_model(data_dir, lr):
         saved_state = torch.load(os.path.join(model_dir, last_epoch_f), map_location=input_device)        
         net.load_state_dict(saved_state['model']) 
         optimizer.load_state_dict(saved_state['optimizer'])
-        for g in optimizer.param_groups:
-            g['lr'] = lr
+        # for g in optimizer.param_groups:
+        #     g['lr'] = lr
         last_epoch = get_epoch(last_epoch_f)
     return net, optimizer, input_device, output_device, last_epoch
 
