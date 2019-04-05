@@ -105,7 +105,7 @@ def eval(model, val_dataset, criteria, metrics, input_device, output_device):
     loss_vals = {k:0 for k, _ in criteria.items()}
     metric_vals = {k:0 for k,_ in metrics.items()}
     
-    for i in range(0, total_batch):
+    for i in trange(0, total_batch):
         data, labels = val_dataset.next_batch(eval_batch_size)
         data = torch.from_numpy(data).to(input_device).to(torch.float)
         labels = torch.from_numpy(labels).to(output_device).to(torch.float)
@@ -204,10 +204,10 @@ def train(data_dir, train_data, val_data, lr, eval_only = False, num_epochs = TR
             if (epoch + 1) % save_freq == 0 or epoch == start_epoch +num_epochs:
                 save_model(data_dir, net, optimizer, 'shapenet_epoch_%d.pth'% epoch)
                 # # test 
-                img = train_dataset.data[0]
-                img = img.reshape(*img.shape[1:])
-                lmks = predict(net, img, input_device)
-                view_img(img, lmks, train_dataset.labels[0])
+                # img = train_dataset.data[0]
+                # img = img.reshape(*img.shape[1:])
+                # lmks = predict(net, img, input_device)
+                # view_img(img, lmks, train_dataset.labels[0])
             # validate 
             # print('eval at end of epoch')            
             metric_vals, loss_vals, preds = eval(net, val_dataset if DEBUG_SINGLE_IMG is None else train_dataset, criteria, metrics, input_device, output_device)
