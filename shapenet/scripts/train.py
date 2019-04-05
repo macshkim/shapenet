@@ -196,7 +196,7 @@ def train(data_dir, train_data, val_data, lr, eval_only = False, num_epochs = TR
                 mode='min', threshold=1e-4, threshold_mode='rel',
                 verbose=True,
                 factor=0.1, patience=5, cooldown=0, min_lr=0, eps=1e-8)
-        for epoch in range(start_epoch, num_epochs+1):
+        for epoch in range(start_epoch, start_epoch + num_epochs):
             # train a single epoch            
             train_single_epoch(net, optimizer, criteria, train_dataset, input_device, output_device)                        
             # save model after epoch
