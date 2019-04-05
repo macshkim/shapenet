@@ -13,7 +13,7 @@ import re
 BATCH_SIZE = 1
 N_COMPONENTS = 68
 TRAIN_EPOCHS = 1000
-DEBUG_SINGLE_IMG = 0
+DEBUG_SINGLE_IMG = None
 PCA_FILE = 'unrot_train_pca.npz'
 
 def load_pca(pca_path, n_components):
@@ -191,7 +191,7 @@ def train(data_dir, train_data, val_data, lr, eval_only = False, num_epochs = TR
     else:
         # train - just set the mode to 'train'    
         net.train()        
-        save_freq = 100
+        save_freq = 1 if DEBUG_SINGLE_IMG is None else 100
         # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.5)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
                 mode='min', threshold=1e-4, threshold_mode='rel',
@@ -235,7 +235,7 @@ def run_train():
     lr = args.learnrate
     if args.pcafile is not None:
         PCA_FILE = args.pcafile
-        
+
     assert data_dir is not None
     train_data = os.path.join(data_dir, 'labels_ibug_300W_train.npz')
     val_data = os.path.join(data_dir, 'labels_ibug_300W_test.npz')    
