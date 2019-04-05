@@ -51,11 +51,11 @@ def test_on_train(data_dir):
     ds = DataSet(train_data)
     model, _, input_device, output_device, _ = load_model(data_dir, 0.0001)
     # model, _, input_device, output_device = load_pretrain_model(data_dir)
-    lmks = predict(model, ds.data[391:392], input_device)
-    img = ds.data[391]
+    lmks = predict(model, ds.data[0:1], input_device)
+    img = ds.data[0]
     img = img.reshape(*img.shape[1:])
     # view_img(img, lmks[:, [1, 0]])
-    view_img(img, lmks, ds.labels[391])
+    view_img(img, lmks, ds.labels[0])
 
 def examine(data_dir):
     print('Pre-trained')

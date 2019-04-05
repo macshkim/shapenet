@@ -1,4 +1,4 @@
-import kaggle
+# import kaggle
 import os
 import zipfile
 import glob
@@ -32,13 +32,14 @@ def _make_pca(data_dir, out_file, normalize_rot=False, rotation_idxs=()):
 
     data_dir = os.path.abspath(data_dir)
     out_file = os.path.abspath(out_file)
-
-    data = SingleShapeDataProcessing.from_dir(data_dir)
+    print('-load data')
+    data = SingleShapeDataProcessing.from_dir(data_dir, n_jobs=2)
     if normalize_rot:
+        print('-rotate data')
         for idx in range(len(data)):
             data[idx] = data[idx].normalize_rotation(rotation_idxs[0],
                                                      rotation_idxs[1])
-
+    print('-make pca')
     pca = data.lmk_pca(True, True)
 
     if out_file.endswith(".npz"):
@@ -266,8 +267,15 @@ def prepare_helen_dset():
 
     args = parser.parse_args()
 
-    _prepare_ibug_dset(args.zip_file, "helen", args.ddir, args.remove_zip,
-                       args.normalize_pca_rot)
+    # _prepare_ibug_dset(args.zip_file, "helen", args.ddir, args.remove_zip,
+    #                    args.normalize_pca_rot)
+    print('normalize rot = ', args.normalize_pca_rot)
+    _prepare_ibug_dset_from_dir(args.ddir, args.normalize_pca_rot)
+
+def _prepare_ibug_dset_from_dir(data_path, normalize_pca_rot):
+    _make_pca(os.path.join(data_path, "trainset"),
+              os.path.join(data_path, "helen_train_pca.npz"),
+              normalize_rot=normalize_pca_rot, rotation_idxs=(37, 46))
 
 
 def prepare_cat_dset():
@@ -401,4 +409,4 @@ def prepare_all_data():
 
 
 if __name__ == '__main__':
-    prepare_all_data()
+    prepare_helen_dset()

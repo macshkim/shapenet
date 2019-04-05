@@ -14,6 +14,7 @@ BATCH_SIZE = 1
 N_COMPONENTS = 68
 TRAIN_EPOCHS = 1000
 DEBUG_SINGLE_IMG = 0
+PCA_FILE = 'unrot_train_pca.npz'
 
 def load_pca(pca_path, n_components):
     return np.load(pca_path)['shapes'][:(n_components + 1)]
@@ -131,7 +132,7 @@ def load_pretrain_model(data_dir):
 
 def load_model(data_dir, lr):
     model_dir = os.path.join(data_dir, 'model')
-    pca_path = os.path.join(data_dir, 'train_pca.npz')
+    pca_path = os.path.join(data_dir, PCA_FILE)
     n_components = N_COMPONENTS    
     # load PCA
     pca = load_pca(pca_path, n_components) 
@@ -220,6 +221,9 @@ def run_train():
     parser.add_argument("--datadir",
                         help="Path to dataset dir",
                         type=str)
+    parser.add_argument("--pcafile",
+                        help="pca file name",
+                        type=str)
     parser.add_argument("--evalonly", action="store_true",
                         help="do not train. only test on validation set",
                         default=False)
@@ -229,7 +233,9 @@ def run_train():
     data_dir = args.datadir
     evalonly = args.evalonly
     lr = args.learnrate
-    
+    if args.pcafile is not None:
+        PCA_FILE = args.pcafile
+        
     assert data_dir is not None
     train_data = os.path.join(data_dir, 'labels_ibug_300W_train.npz')
     val_data = os.path.join(data_dir, 'labels_ibug_300W_test.npz')    

@@ -147,18 +147,19 @@ def load_landmarks(lmk_xml):
 
     return np.array(points), img_shapes, img_names
 
-def prepare_dlib_dset(lmk_xml):
+def prepare_dlib_dset(lmk_xml, normalize_rot=False):
     """
     Prepare datasets similar to one available in dlib.
     Download according to this instruction 
     https://medium.com/datadriveninvestor/training-alternative-dlib-shape-predictor-models-using-python-d1d8f8bd9f5c
     """
     base_dir = os.path.dirname(lmk_xml)
-    pca_file = os.path.join(base_dir, 'train_pca.npz')
+    pca_file = os.path.join(base_dir, 'train_pca.npz' if normalize_rot else 'unrot_train_pca.npz')
     if not os.path.exists(pca_file):
         points, img_sizes, imgs = load_landmarks(lmk_xml)
         # view_landmarks(points[20], os.path.join(base_dir, imgs[20]), img_sizes[20])
-        points = normalize_rotation(points, img_sizes)
+        if normalize_rot:
+            points = normalize_rotation(points, img_sizes)
         # view_landmarks(points[20])
         pca = make_pca(points, img_sizes)        
         print('pca size = ', pca.shape)
