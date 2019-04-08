@@ -31,7 +31,7 @@ python -m shapenet.scripts.train --datadir "/path/to/data"
 
 To predict
 ```bash
-python -m shapnet.scripts.predict --datadir "/path/to/data"
+python -m shapnet.scripts.predict --datadir "/path/to/data" --img "/path/to/target/image"
 ```
 
 

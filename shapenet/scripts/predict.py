@@ -8,6 +8,8 @@ import torch
 import os
 from torch.nn.modules.module import _addindent
 
+USE_PRETRAINED = True
+
 def detect_face(img):
     detector = dlib.get_frontal_face_detector()
     dets = detector(img, 1)    
@@ -41,10 +43,16 @@ def get_lmks(data_dir, img_path):
     img = grayscale(img)
     img = resize(img, (IMAGE_SIZE, IMAGE_SIZE), anti_aliasing=True, mode='reflect')   
     # predict
-    model, _, input_device, output_device, _ = load_model(data_dir, 0.0001)
+    if not USE_PRETRAINED:
+        model, _, input_device, output_device, _ = load_model(data_dir, 0.0001)
+    else:
+        model, _, input_device, output_device = load_pretrain_model(data_dir)
     lmks = predict(model, img, input_device)
     # print(len(lmks))
-    view_img(img, lmks)
+    if USE_PRETRAINED:
+        view_img(img, lmks[:, [1, 0]])
+    else:
+        view_img(img, lmks)
 
 def test_on_train(data_dir):
     train_data = os.path.join(data_dir, 'labels_ibug_300W_train.npz')
@@ -67,8 +75,23 @@ def examine(data_dir):
     print(model)
 
 if __name__ == '__main__':
-    data_dir = '/home/tamvm/Downloads/ibug_300W_large_face_landmark_dataset'
-    # target = '/home/tamvm/Downloads/ibug_300W_large_face_landmark_dataset/helen/trainset/2344967158_1.jpg'
-    target = '/home/tamvm/Downloads/98064f2f0389e1d7b898.jpg'
-    #get_lmks(data_dir, target)
-    test_on_train(data_dir)
+    debug = False 
+    if debug:
+        data_dir = '/home/tamvm/Downloads/ibug_300W_large_face_landmark_dataset'
+        # target = '/home/tamvm/Downloads/ibug_300W_large_face_landmark_dataset/helen/trainset/2344967158_1.jpg'
+        target = '/home/tamvm/Downloads/98064f2f0389e1d7b898.jpg'
+    else:
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--datadir",
+                        help="Path to model dir",
+                        type=str)
+        parser.add_argument('--img',
+                        help='Path to img',
+                        type=str)
+        args = parser.parse_args()
+        data_dir = args.datadir
+        target = args.img
+
+    get_lmks(data_dir, target)
+    # test_on_train(data_dir)
