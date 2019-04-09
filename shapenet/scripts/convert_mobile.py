@@ -20,7 +20,9 @@ def get_img_data(data_dir):
 def run_on_caffe2():
     import onnx
     import caffe2.python.onnx.backend as onnx_caffe2_backend
-    model = onnx.load('shapenet2.onnx')
+    model = onnx.load('shapenet.onnx')
+    onnx.checker.check_model(model)
+    onnx.helper.printable_graph(model.graph)
     # print('model ', model)
     prepared_backend = onnx_caffe2_backend.prepare(model)
     # print('model input ', 
@@ -29,6 +31,14 @@ def run_on_caffe2():
     c2_out = prepared_backend.run(W)[0]
     # print('output', c2_out[0])
 
+def convert_jit(data_dir):
+    # model, _, _, _, _ = load_model(data_dir, 0.0001)
+    model, _, _, _ = load_pretrain_model(data_dir)
+    model.eval()
+    x = get_dummy_data()
+    traced_script_module = torch.jit.trace(model, x)
+
+
 def convert(data_dir):
     # model, _, _, _ = load_pretrain_model(data_dir)
     model, _, _, _, _ = load_model(data_dir, 0.0001)
@@ -36,7 +46,7 @@ def convert(data_dir):
     # aa = get_dummy_data(data_dir)
     # print ('aa shape = ', aa.shapenet)
     x = get_dummy_data()
-    torch_out = torch.onnx._export(model, x, 'shapenet.onnx', export_params=True)
+    torch_out = torch.onnx._export(model, x, 'shapenet.onnx', export_params=True, verbose=True)
     # print('result = ', r2)
     verify = True
     if verify:
@@ -45,6 +55,10 @@ def convert(data_dir):
 
         # Load the ONNX ModelProto object. model is a standard Python protobuf object
         model = onnx.load("shapenet.onnx")
+
+        r = onnx.checker.check_model(model)
+        onnx.helper.printable_graph(model.graph)
+        # print('---- DONE ')
 
         # prepare the caffe2 backend for executing the model this converts the ONNX model into a
         # Caffe2 NetDef that can execute it. Other ONNX backends, like one for CNTK will be
@@ -61,7 +75,7 @@ def convert(data_dir):
 
         # Run the Caffe2 net:
         c2_out = prepared_backend.run(W)[0]
-
+        # print(c2_out)
         # Verify the numerical correctness upto 3 decimal places
         np.testing.assert_almost_equal(torch_out.data.cpu().numpy(), c2_out, decimal=3)
 
@@ -76,5 +90,5 @@ if __name__ == '__main__':
     data_dir = args.datadir
     if True:
         data_dir = '/home/tamvm/Downloads/ibug_300W_large_face_landmark_dataset'
-    convert(data_dir)
-    # run_on_caffe2()
+    # convert(data_dir)
+    convert_jit(data_dir)

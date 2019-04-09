@@ -101,16 +101,16 @@ class _ShapeLayerPy(torch.nn.Module):
 
         """
         # print ('--------------------------------------->>>')
-        # shapes = getattr(self, "_shape_mean").clone()
-        # shapes = shapes.expand(shape_params.size(0), *shapes.size()[1:])
-        shapes = getattr(self, '_shape_mean')
-        shapes = shapes.repeat(shape_params.size(0)/shapes.size(0), *([1] * (len(shapes.size()) - 1)))
+        shapes = getattr(self, "_shape_mean").clone()
+        shapes = shapes.expand(shape_params.size(0), *shapes.size()[1:])
+        # shapes = getattr(self, '_shape_mean')
+        # shapes = shapes.repeat(int(shape_params.size(0)/shapes.size(0)), *([1] * (len(shapes.size()) - 1)))
         # shapes = getattr(self, '_shape_me')
         components = getattr(self, "_shape_components")
-        # components = components.expand(shape_params.size(0),
-        #                                *components.size()[1:])
-        components = components.repeat(shape_params.size(0)/components.size(0),
-                                        *([1] * (len(components.size()) - 1)))
+        components = components.expand(shape_params.size(0),
+                                       *components.size()[1:])
+        # components = components.repeat(int(shape_params.size(0)/components.size(0)),
+        #                                 *([1] * (len(components.size()) - 1)))
         weighted_components = components.mul(
             shape_params.expand_as(components))
 
