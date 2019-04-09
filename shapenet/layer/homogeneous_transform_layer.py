@@ -202,7 +202,6 @@ class _HomogeneousTransformationLayerPy(torch.nn.Module):
             the transformed shapes in cartesian coordinates
 
         """
-
         assert shapes.size(-1) == self._n_dims, "Layer for other " \
                                                 "dimensionality specified"
 
